@@ -18,3 +18,51 @@ Follow these steps carefully to clean up your profile:
 3. **Open Developer Tools:** Right-click anywhere on the page and select **Inspect** (or press `F12` / `Ctrl+Shift+I` on Windows, `Cmd+Option+I` on Mac) and switch to the **Console** tab.
 4. **Paste and Run:** Copy the script code below, paste it into the console, and press `Enter`.
 
+### The Script
+
+```javascript
+async function deleteAllTweets() {
+  const delay = (ms) => new Promise(res => setTimeout(res, ms));
+  
+  while (true) {
+    // 1. Locate the caret/more button for the first tweet on screen
+    let caret = document.querySelector('[data-testid="caret"]');
+    if (!caret) {
+      // Scroll down to load more tweets if none are found on screen
+      window.scrollTo(0, document.body.scrollHeight);
+      await delay(2000);
+      caret = document.querySelector('[data-testid="caret"]');
+      if (!caret) {
+        console.log("No more tweets found or process finished successfully!");
+        break;
+      }
+    }
+    
+    caret.click();
+    await delay(500); // Wait for the dropdown menu to animate open
+    
+    // 2. Locate the "Delete" option within the active menu
+    const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]'));
+    const deleteBtn = menuItems.find(item => item.textContent.includes('Delete'));
+    
+    if (deleteBtn) {
+      deleteBtn.click();
+      await delay(500); // Wait for the confirmation dialog
+      
+      // 3. Confirm the deletion
+      const confirmBtn = document.querySelector('[data-testid="confirmationSheetConfirm"]');
+      if (confirmBtn) {
+        confirmBtn.click();
+        console.log("Successfully deleted a tweet.");
+        await delay(1500); // Safety cooldown before taking the next action
+      }
+    } else {
+      // If it's a retweet/item owned by someone else, close the menu and scroll past it
+      document.body.click();
+      window.scrollBy(0, 300);
+      await delay(1000);
+    }
+  }
+}
+
+deleteAllTweets();
